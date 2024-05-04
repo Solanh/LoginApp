@@ -1,5 +1,8 @@
 package com.example.loginapp
 
+import com.example.loginapp.usernameChecker
+import com.example.loginapp.emailChecker
+
 import android.content.ContentValues.TAG
 import android.os.Bundle
 import android.util.Log
@@ -30,6 +33,7 @@ import com.example.loginapp.ui.theme.LoginAppTheme
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,15 +63,52 @@ fun UserLogin(){
     var password by remember {
         mutableStateOf("")
     }
+    var email by remember {
+        mutableStateOf("")
+    }
+
 
     val user = hashMapOf(
-        "username" to "$username",
-        "password" to "$password",
+        "email" to email ,
+        "username" to username ,
+        "password" to password ,
     )
     var createAccountEnabled by remember { mutableStateOf(false) }
 
+    var emailExistsState by remember { mutableStateOf(false)}
+
+    var usernameExistsState by remember { mutableStateOf(false)}
+
     Surface(){
         Column(verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally){
+
+            OutlinedTextField(
+                value = email ,
+                onValueChange = {
+                    email = it
+                } ,
+                placeholder = { Text("Enter Email") }
+            )
+            emailChecker(email)
+                .addOnSuccessListener { emailExists ->
+                    if (emailExists) {
+                        emailExistsState = true
+                        createAccountEnabled = false
+                        // Handle the case where the email exists
+                    }
+                    else {
+                        createAccountEnabled = true
+                    }
+                }
+                .addOnFailureListener { exception ->
+                    // Handle any errors that occurred during the query
+                    println("Error checking email: $exception")
+                }
+            if (emailExistsState) {
+                Text("Email already in use")}
+
+            Spacer(modifier = Modifier.height(20.dp))
+
             OutlinedTextField(
                 value = username ,
                 onValueChange = {
@@ -75,6 +116,24 @@ fun UserLogin(){
                     } ,
                 placeholder = { Text("Enter Username") }
             )
+
+            usernameChecker(username)
+                .addOnSuccessListener { usernameExists ->
+                    if (usernameExists) {
+                        usernameExistsState = true
+                        createAccountEnabled = false
+                        // Handle the case where the email exists
+                    }
+                    else {
+                        createAccountEnabled = true
+                    }
+                }
+                .addOnFailureListener { exception ->
+                    // Handle any errors that occurred during the query
+                    println("Error checking email: $exception")
+                }
+            if (usernameExistsState) {
+                Text("Username already in use")}
             
             Spacer(modifier = Modifier.height(20.dp))
 
