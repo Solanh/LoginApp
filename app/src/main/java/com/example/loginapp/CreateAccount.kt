@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -15,16 +16,17 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusState
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
+import java.util.Locale
+
 
 @Composable
 fun CreateAccount(backClicked: () -> Unit){
@@ -32,26 +34,35 @@ fun CreateAccount(backClicked: () -> Unit){
     val db = Firebase.firestore
 
 
-    var username by remember {
-        mutableStateOf("")
-    }
-    var password by remember {
-        mutableStateOf("")
-    }
-    var email by remember {
-        mutableStateOf("")
-    }
+    var username by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var formattedEmail by remember { mutableStateOf(email.lowercase(Locale.ROOT)) }
 
     val user = hashMapOf(
-        "email" to email ,
+        "email" to formattedEmail ,
         "username" to username ,
         "password" to password ,
     )
     var createAccountEnabled by remember { mutableStateOf(false) }
 
+    var createAccountFailed by remember { mutableStateOf(false) }
+
+    var createAccountSuccessful by remember { mutableStateOf(false) }
+
+    var correctInfo by remember { mutableStateOf(false) }
+
     var emailExistsState by remember { mutableStateOf(false) }
 
+    var validEmail by remember { mutableStateOf(true) }
+
     var usernameExistsState by remember { mutableStateOf(false) }
+
+    var correctPassword by remember { mutableStateOf(true) }
+
+
+
 
     Surface {
         Box(contentAlignment = Alignment.TopStart) {
@@ -64,22 +75,30 @@ fun CreateAccount(backClicked: () -> Unit){
 
 
             OutlinedTextField(
-                value = email ,
-                onValueChange = {
-                    email = it
-                } ,
+                value = email,
+                onValueChange = { email = it },
                 placeholder = { Text("Enter Email") },
-                singleLine = true
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
             )
-            emailChecker(email)
+
+            if (isValidEmail(email)) {
+                formattedEmail = email.lowercase(Locale.ROOT)
+
+                user["email"] = formattedEmail
+            }
+
+
+
+            emailChecker(email.lowercase(Locale.ROOT))
                 .addOnSuccessListener { emailExists ->
                     if (emailExists) {
                         emailExistsState = true
-                        createAccountEnabled = false
+                        correctInfo = false
                         // Handle the case where the email exists
                     }
                     else {
-                        createAccountEnabled = true
+                        correctInfo = true
                         emailExistsState = false
                     }
                 }
@@ -87,9 +106,10 @@ fun CreateAccount(backClicked: () -> Unit){
                     // Handle any errors that occurred during the query
                     println("Error checking email: $exception")
                 }
-            if (emailExistsState) {
+            if (emailExistsState && !createAccountSuccessful) {
                 Text("Email already in use")
             }
+
 
             Spacer(modifier = Modifier.height(20.dp))
 
@@ -106,11 +126,11 @@ fun CreateAccount(backClicked: () -> Unit){
                 .addOnSuccessListener { usernameExists ->
                     if (usernameExists) {
                         usernameExistsState = true
-                        createAccountEnabled = false
+                        correctInfo = false
                         // Handle the case where the email exists
                     }
                     else {
-                        createAccountEnabled = true
+                        correctInfo = true
                         usernameExistsState = false
                     }
                 }
@@ -118,7 +138,8 @@ fun CreateAccount(backClicked: () -> Unit){
                     // Handle any errors that occurred during the query
                     println("Error checking email: $exception")
                 }
-            if (usernameExistsState) {
+
+            if (usernameExistsState && !createAccountSuccessful) {
                 Text("Username already in use")
             }
 
@@ -132,21 +153,67 @@ fun CreateAccount(backClicked: () -> Unit){
                 placeholder = { Text("Enter Password") },
                 singleLine = true
             )
-            createAccountEnabled = username.isNotBlank() && password.isNotBlank()
-            Spacer(modifier = Modifier.height(16.dp))
+            if (!correctPassword){
+                Text("Passwords do not match")
+            }
 
-            Button(onClick = {
-                if (createAccountEnabled) {
-                    db.collection("users").add(user)
-                        .addOnSuccessListener { documentReference ->
-                            Log.d(ContentValues.TAG , "DocumentSnapshot added with ID: ${documentReference.id}")
+            Spacer(modifier = Modifier.height(20.dp))
+
+            OutlinedTextField(
+                value = confirmPassword ,
+                onValueChange = {
+                    confirmPassword = it
+                } ,
+                placeholder = { Text("Confirm Password") },
+                singleLine = true
+            )
+
+
+            LaunchedEffect(password, confirmPassword) {
+                correctPassword = password == confirmPassword
+            }
+
+
+
+
+
+            createAccountEnabled = username.isNotBlank() && password.isNotBlank() && correctPassword && correctInfo && validEmail && email.isNotBlank()
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = {
+                    if (createAccountEnabled) {
+
+                            db.collection("users").add(user)
+                                .addOnSuccessListener { documentReference ->
+                                    Log.d(ContentValues.TAG , "DocumentSnapshot added with ID: ${documentReference.id}")
+                                    createAccountSuccessful = true
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.w(ContentValues.TAG , "Error adding document" , e)
+                                    createAccountFailed = true // Set createAccountFailed to true when there's an error
+                                }
                         }
-                        .addOnFailureListener { e ->
-                            Log.w(ContentValues.TAG , "Error adding document" , e)
-                        }
-                }
-            }){
+                     else {
+                        createAccountFailed = true // Set createAccountFailed to true if createAccountEnabled is false
+                    }
+                },
+                enabled = !createAccountSuccessful // Enable the button if create account is not successful
+            ) {
                 Text("Create Account")
+            }
+
+
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            if (createAccountFailed && !createAccountSuccessful){
+                Text("Fields not filled correctly")
+            }
+            if (!validEmail){
+                Text("Invalid email")
+            }
+            if (createAccountSuccessful){
+                Text("Account successfully created")
             }
         }
 
