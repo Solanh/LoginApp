@@ -39,7 +39,9 @@ android {
     }
     buildFeatures {
         compose = true
+
     }
+
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
     }
@@ -53,12 +55,13 @@ android {
 dependencies {
 
     // noinspection UseTomlInstead
-    implementation (platform("com.google.firebase:firebase-bom:32.8.1"))
+    implementation (platform("com.google.firebase:firebase-bom:33.0.0"))
 
     // noinspection UseTomlInstead
     implementation ("com.google.firebase:firebase-auth")
     // noinspection UseTomlInstead
     implementation ("com.google.firebase:firebase-firestore")
+    // noinspection UseTomlInstead
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -69,6 +72,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.firebase.firestore)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

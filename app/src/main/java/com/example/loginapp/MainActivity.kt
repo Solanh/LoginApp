@@ -1,5 +1,6 @@
 package com.example.loginapp
 
+
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -21,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.loginapp.ui.theme.LoginAppTheme
+import com.google.firebase.auth.FirebaseAuth
 
 
 class MainActivity : ComponentActivity() {
@@ -28,68 +30,72 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             LoginAppTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize() ,
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    Greeting("Android")
-                }
+                AppContent()
             }
         }
     }
 }
 
-
 @Composable
-fun Main(){
-    var showCreateAccount by remember {
-        mutableStateOf(false)
+fun AppContent() {
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Main()
     }
-    var showSignIn by remember {
-        mutableStateOf(false)
-    }
-    var showOnboardingScreen by remember {
-        mutableStateOf(true)
-    }
-    if (showOnboardingScreen) {
-        OnboardingScreen(
-            onSignInClicked = { showSignIn = true
-                              showOnboardingScreen = false} ,
-            onCreateAccountClicked = { showCreateAccount = true
-                                showOnboardingScreen = false}
-        )
-    }
-
-    else if (showSignIn){
-        SignIn(backClicked = {showOnboardingScreen = true
-        showSignIn = false})
-
-    }
-    else if (showCreateAccount){
-        CreateAccount(backClicked = {showOnboardingScreen = true
-        showCreateAccount = false})
-    }
-
-
 }
 
+@Composable
+fun Main() {
+    val user = FirebaseAuth.getInstance().currentUser
+    var showOnboardingScreen by rememberSaveable { mutableStateOf(user == null) }
+    var showSignIn by rememberSaveable { mutableStateOf(false) }
+    var showCreateAccount by rememberSaveable { mutableStateOf(false) }
+    var showHomeScreen by rememberSaveable { mutableStateOf(user != null) }
 
+    when {
+
+        showOnboardingScreen -> OnboardingScreen(
+            onSignInClicked = {
+                showSignIn = true
+                showOnboardingScreen = false
+            },
+            onCreateAccountClicked = {
+                showCreateAccount = true
+                showOnboardingScreen = false
+            }
+        )
+        showSignIn -> SignIn(
+            backClicked = {
+                showOnboardingScreen = true
+                showSignIn = false
+            },
+            loginSuccess = {
+                showHomeScreen = true
+                showSignIn = false
+            }
+        )
+        showCreateAccount -> CreateAccount(
+            backClicked = {
+                showOnboardingScreen = true
+                showCreateAccount = false
+            }
+        )
+        showHomeScreen -> HomeScreen(
+        )
+    }
+}
 
 @Composable
-fun Greeting(name: String , modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!" ,
-        modifier = modifier
-    )
-    Main()
+fun Greeting(name: String) {
+    Text(text = "Hello $name!")
 }
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
+fun DefaultPreview() {
     LoginAppTheme {
         Greeting("Android")
-        Main()
     }
 }

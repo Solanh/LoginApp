@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.dp
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import java.util.Locale
+import com.google.firebase.auth.FirebaseAuth
+import registerUser
 
 
 @Composable
@@ -42,8 +44,8 @@ fun CreateAccount(backClicked: () -> Unit){
 
     val user = hashMapOf(
         "email" to formattedEmail ,
-        "username" to username ,
-        "password" to password ,
+        "username" to username
+
     )
     var createAccountEnabled by remember { mutableStateOf(false) }
 
@@ -84,7 +86,6 @@ fun CreateAccount(backClicked: () -> Unit){
 
             if (isValidEmail(email)) {
                 formattedEmail = email.lowercase(Locale.ROOT)
-
                 user["email"] = formattedEmail
             }
 
@@ -177,25 +178,32 @@ fun CreateAccount(backClicked: () -> Unit){
 
 
 
-            createAccountEnabled = username.isNotBlank() && password.isNotBlank() && correctPassword && correctInfo && validEmail && email.isNotBlank()
+
             Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = {
-                    if (createAccountEnabled) {
-
-                            db.collection("users").add(user)
-                                .addOnSuccessListener { documentReference ->
-                                    Log.d(ContentValues.TAG , "DocumentSnapshot added with ID: ${documentReference.id}")
-                                    createAccountSuccessful = true
-                                }
-                                .addOnFailureListener { e ->
-                                    Log.w(ContentValues.TAG , "Error adding document" , e)
-                                    createAccountFailed = true // Set createAccountFailed to true when there's an error
-                                }
-                        }
-                     else {
-                        createAccountFailed = true // Set createAccountFailed to true if createAccountEnabled is false
+                    validEmail = isValidEmail(email) // Validate email when button is clicked
+                    if (validEmail) {
+                        formattedEmail = email.lowercase(Locale.ROOT)
                     }
+
+                    createAccountEnabled = username.isNotBlank() && password.isNotBlank() && correctPassword && !emailExistsState && validEmail && email.isNotBlank()
+
+                    if (createAccountEnabled) {
+                        db.collection("users").add(hashMapOf("email" to formattedEmail, "username" to username, "password" to password))
+                            .addOnSuccessListener { documentReference ->
+                                Log.d(ContentValues.TAG, "DocumentSnapshot added with ID: ${documentReference.id}")
+                                createAccountSuccessful = true
+                            }
+                            .addOnFailureListener { e ->
+                                Log.w(ContentValues.TAG, "Error adding document", e)
+                                createAccountFailed = true
+                            }
+                        registerUser(email = formattedEmail, password = password)
+                    } else {
+                        createAccountFailed = true
+                    }
+
                 },
                 enabled = !createAccountSuccessful // Enable the button if create account is not successful
             ) {
@@ -219,3 +227,8 @@ fun CreateAccount(backClicked: () -> Unit){
 
     }
 }
+
+
+
+
+
