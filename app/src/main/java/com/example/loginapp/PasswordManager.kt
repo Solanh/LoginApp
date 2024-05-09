@@ -49,6 +49,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -172,15 +173,19 @@ fun AddPassword(backClicked: () -> Unit) {
 }
 
 fun addData(context: Context, passwordInfo: HashMap<String, String>){
-    db.collection("passwords").add(passwordInfo)
-        .addOnSuccessListener { documentReference ->
-            Log.d(ContentValues.TAG, "DocumentSnapshot added with ID: ${documentReference.id}")
-            Toast.makeText(context, "Data was successfully added", Toast.LENGTH_SHORT).show()
-        }
-        .addOnFailureListener { e ->
-            Log.e(ContentValues.TAG, "Error adding document", e)
-            Toast.makeText(context, "Failed to add data", Toast.LENGTH_SHORT).show()
-        }
+    val email = UserData.userEmail?.let { sanitizeEmail(it) }
+    val userId = FirebaseAuth.getInstance().currentUser?.uid
+    if (userId != null) {
+        db.collection(userId).add(passwordInfo)
+            .addOnSuccessListener { documentReference ->
+                Log.d(ContentValues.TAG, "DocumentSnapshot added with ID: ${documentReference.id}")
+                Toast.makeText(context, "Data was successfully added", Toast.LENGTH_SHORT).show()
+            }
+            .addOnFailureListener { e ->
+                Log.e(ContentValues.TAG, "Error adding document", e)
+                Toast.makeText(context, "Failed to add data", Toast.LENGTH_SHORT).show()
+            }
+    }
 }
 
 
@@ -195,10 +200,13 @@ data class DecryptedData(
 fun fetchEncryptedData(): Flow<List<DecryptedData>> = flow {
     val db = FirebaseFirestore.getInstance()
     val secretKey = KeystoreHelper.getSecretKey()
-    val user =
+    val email = UserData.userEmail?.let { sanitizeEmail(it) }
+    val userId = FirebaseAuth.getInstance().currentUser?.uid
+
+
 
     try {
-        val documents = db.collection("passwords").get().await()
+        val documents = db.collection("$userId").get().await()
         val dataList = mutableListOf<DecryptedData>()
 
         for (document in documents) {
@@ -219,6 +227,10 @@ fun fetchEncryptedData(): Flow<List<DecryptedData>> = flow {
         println("Error fetching encrypted data: $e")
         emit(emptyList())
     }
+}
+
+fun sanitizeEmail(email: String): String {
+    return email.replace(".", "_").replace("@", "_at_")
 }
 
 @Composable
