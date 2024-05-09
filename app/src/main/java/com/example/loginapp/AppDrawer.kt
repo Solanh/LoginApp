@@ -83,7 +83,7 @@ sealed class Screen(val route: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppDrawer(navController: NavHostController, onLogOutCompleted: () -> Unit) {
+fun AppDrawer(navController: NavHostController, onLogOutCompleted: () -> Unit, onAddPasswordClicked: () -> Unit) {
     val items = listOf(
         NavigationItem(
             title = "Home",
@@ -167,7 +167,12 @@ fun AppDrawer(navController: NavHostController, onLogOutCompleted: () -> Unit) {
 
             }
         ) {innerPadding ->
-            MainContent(navController, onLogOutCompleted = onLogOutCompleted, padding = innerPadding)
+            MainContent(
+                navController,
+                onLogOutCompleted = onLogOutCompleted,
+                padding = innerPadding,
+                onAddPasswordClicked = onAddPasswordClicked
+            )
         }
     }
 }
@@ -215,7 +220,7 @@ fun DrawerHeader() {
     }
 }
 @Composable
-fun MainContent(navController: NavHostController, onLogOutCompleted: () -> Unit, padding: PaddingValues) {
+fun MainContent(navController: NavHostController, onLogOutCompleted: () -> Unit, padding: PaddingValues, onAddPasswordClicked: () -> Unit) {
     NavHost(navController, startDestination = Screen.Home.route, modifier = Modifier.padding(padding)) {
         composable(
             Screen.Home.route,
@@ -243,7 +248,7 @@ fun MainContent(navController: NavHostController, onLogOutCompleted: () -> Unit,
             enterTransition = { EnterTransition.None } ,
             exitTransition = { ExitTransition.None }
         ) {
-            PasswordManagerScreen()
+            PasswordManagerScreen(onAddPasswordClicked)
         }
     }
 }
@@ -259,7 +264,7 @@ fun modularAppDrawerWidth(): Dp {
 @Composable
 fun PreviewAppDrawer() {
     val navController = rememberNavController()
-    AppDrawer(navController = navController, onLogOutCompleted = {})
+    AppDrawer(navController = navController, onLogOutCompleted = {}, onAddPasswordClicked = {})
 }
 
 

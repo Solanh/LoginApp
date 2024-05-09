@@ -49,6 +49,7 @@ fun Main() {
     var showCreateAccount by rememberSaveable { mutableStateOf(false) }
     var showHomeScreen by rememberSaveable { mutableStateOf(user != null) }
     val navController = rememberNavController()
+    var showAddPassword by rememberSaveable { mutableStateOf(false) }
 
 
     when {
@@ -84,6 +85,17 @@ fun Main() {
             onLogOutCompleted = {
                 showOnboardingScreen = true
                 showHomeScreen = false
+            },
+            onAddPasswordClicked = {
+                showAddPassword = true
+                showHomeScreen = false
+            }
+        )
+        showAddPassword -> AddPassword(
+            backClicked = {
+                showHomeScreen = true
+                showAddPassword = false
+
             }
         )
     }
