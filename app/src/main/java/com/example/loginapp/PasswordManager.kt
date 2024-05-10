@@ -95,6 +95,7 @@ fun AddPassword(backClicked: () -> Unit) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var websiteOrApp by remember { mutableStateOf("") }
+    var addInformationEnabled by rememberSaveable { mutableStateOf(false)}
 
 
     val secretKey = KeystoreHelper.getSecretKey()
@@ -144,25 +145,29 @@ fun AddPassword(backClicked: () -> Unit) {
             )
             Button(
                 onClick =
-
                 {
-                    coroutineScope.launch {
-                        val encryptedEmail = CryptoUtils.encryptData(email, secretKey)
-                        val encryptedUsername = CryptoUtils.encryptData(username, secretKey)
-                        val encryptedPassword = CryptoUtils.encryptData(password, secretKey)
-                        val encryptedWebsiteOrApp = CryptoUtils.encryptData(websiteOrApp, secretKey)
 
-                        val passwordInfo = hashMapOf(
-                            "email" to encryptedEmail,
-                            "username" to encryptedUsername,
-                            "password" to encryptedPassword,
-                            "websiteOrApp" to encryptedWebsiteOrApp
-                        )
-                        addData(passwordInfo = passwordInfo, context = context)
+                    addInformationEnabled = password.isNotBlank() && (username.isNotBlank() or websiteOrApp.isNotBlank() or email.isNotBlank())
+
+                    if (addInformationEnabled) {
+                        coroutineScope.launch {
+                            val encryptedEmail = CryptoUtils.encryptData(email, secretKey)
+                            val encryptedUsername = CryptoUtils.encryptData(username, secretKey)
+                            val encryptedPassword = CryptoUtils.encryptData(password, secretKey)
+                            val encryptedWebsiteOrApp = CryptoUtils.encryptData(websiteOrApp, secretKey)
+
+                            val passwordInfo = hashMapOf(
+                                "email" to encryptedEmail,
+                                "username" to encryptedUsername,
+                                "password" to encryptedPassword,
+                                "websiteOrApp" to encryptedWebsiteOrApp
+                            )
+                            addData(passwordInfo = passwordInfo, context = context)
 
 
-                    }
+                        }
 
+                    }else Toast.makeText(context , "Invalid Input" , Toast.LENGTH_LONG).show()
                 },
                 modifier = Modifier.padding(16.dp)
             ) {
@@ -259,9 +264,25 @@ fun DisplayDecryptedData(dataList: List<DecryptedData>) {
                                 .weight(1f)  // Takes up all available space pushing the Checkbox and Button to the end
                                 .padding(end = 8.dp)
                         ) {
-                            Text("Email: ${data.email}", style = MaterialTheme.typography.bodyMedium)
-                            Text("Username: ${data.username}", style = MaterialTheme.typography.bodyMedium)
-                            Text("Website/App: ${data.websiteOrApp}", style = MaterialTheme.typography.bodyMedium)
+
+                                if(data.email.isNotBlank()) {
+                                    Text(
+                                        "Email: ${data.email}",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+                                if(data.username.isNotBlank()) {
+                                    Text(
+                                        "Username: ${data.username}", style =
+                                        MaterialTheme.typography.bodyMedium)
+                                }
+                                if(data.websiteOrApp.isNotBlank()) {
+                                    Text(
+                                        "Website/App: ${data.websiteOrApp}",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text("Password: ", style = MaterialTheme.typography.bodyLarge)

@@ -1,6 +1,8 @@
 package com.example.loginapp
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.background
@@ -81,6 +83,7 @@ sealed class Screen(val route: String) {
 
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppDrawer(navController: NavHostController, onLogOutCompleted: () -> Unit, onAddPasswordClicked: () -> Unit) {
@@ -219,6 +222,7 @@ fun DrawerHeader() {
         Spacer(modifier = Modifier.height(16.dp))
     }
 }
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MainContent(navController: NavHostController, onLogOutCompleted: () -> Unit, padding: PaddingValues, onAddPasswordClicked: () -> Unit) {
     NavHost(navController, startDestination = Screen.Home.route, modifier = Modifier.padding(padding)) {
@@ -260,6 +264,7 @@ fun modularAppDrawerWidth(): Dp {
 
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true)
 @Composable
 fun PreviewAppDrawer() {
