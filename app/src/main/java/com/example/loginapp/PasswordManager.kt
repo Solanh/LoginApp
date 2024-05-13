@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -181,7 +183,7 @@ fun addData(context: Context, passwordInfo: HashMap<String, String>){
     val email = UserData.userEmail?.let { sanitizeEmail(it) }
     val userId = FirebaseAuth.getInstance().currentUser?.uid
     if (userId != null) {
-        db.collection(userId).add(passwordInfo)
+        db.collection("$email").add(passwordInfo)
             .addOnSuccessListener { documentReference ->
                 Log.d(ContentValues.TAG, "DocumentSnapshot added with ID: ${documentReference.id}")
                 Toast.makeText(context, "Data was successfully added", Toast.LENGTH_SHORT).show()
@@ -211,7 +213,7 @@ fun fetchEncryptedData(): Flow<List<DecryptedData>> = flow {
 
 
     try {
-        val documents = db.collection("$userId").get().await()
+        val documents = db.collection("$email").get().await()
         val dataList = mutableListOf<DecryptedData>()
 
         for (document in documents) {
@@ -243,9 +245,7 @@ fun DisplayDecryptedData(dataList: List<DecryptedData>) {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
 
-
     Column {
-
         LazyColumn {
             items(dataList) { data ->
                 var showPassword by rememberSaveable { mutableStateOf(false) }
@@ -255,86 +255,88 @@ fun DisplayDecryptedData(dataList: List<DecryptedData>) {
                         .fillMaxWidth(),
                     elevation = CardDefaults.elevatedCardElevation(2.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
+                    Column(
                         modifier = Modifier.padding(16.dp)
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)  // Takes up all available space pushing the Checkbox and Button to the end
-                                .padding(end = 8.dp)
-                        ) {
-
-                                if(data.email.isNotBlank()) {
-                                    Text(
-                                        "Email: ${data.email}",
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                }
-                                if(data.username.isNotBlank()) {
-                                    Text(
-                                        "Username: ${data.username}", style =
-                                        MaterialTheme.typography.bodyMedium)
-                                }
-                                if(data.websiteOrApp.isNotBlank()) {
-                                    Text(
-                                        "Website/App: ${data.websiteOrApp}",
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                }
-
-
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("Password: ", style = MaterialTheme.typography.bodyLarge)
-                                BasicTextField(
-                                    value = data.password,
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                                    textStyle = LocalTextStyle.current.copy(
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        fontSize = 16.sp
-                                    ),
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .padding(end = 8.dp),
-                                    decorationBox = { innerTextField ->
-                                        Box(
-                                            contentAlignment = Alignment.CenterStart
-                                        ) {
-                                            if (data.password.isEmpty()) {
-                                                Text(
-                                                    "No Password",
-                                                    style = MaterialTheme.typography.bodyMedium
-                                                )
-                                            }
-                                            innerTextField()
-                                        }
-                                    }
-                                )
-                            }
+                        // Displaying Email, Username, Website/App if available
+                        if (data.email.isNotBlank()) {
+                            Text(
+                                "Email: ${data.email}",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                        if (data.username.isNotBlank()) {
+                            Text(
+                                "Username: ${data.username}",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                        if (data.websiteOrApp.isNotBlank()) {
+                            Text(
+                                "Website/App: ${data.websiteOrApp}",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
                         }
 
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                            Text("Show Password", style = MaterialTheme.typography.labelMedium)
+                        // Password Row
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Password: ", style = MaterialTheme.typography.bodyLarge)
+                            BasicTextField(
+                                value = data.password,
+                                onValueChange = {},
+                                readOnly = true,
+                                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                                textStyle = LocalTextStyle.current.copy(
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    fontSize = 16.sp
+                                ),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(end = 8.dp),
+                                decorationBox = { innerTextField ->
+                                    Box(
+                                        contentAlignment = Alignment.CenterStart
+                                    ) {
+                                        if (data.password.isEmpty()) {
+                                            Text(
+                                                "No Password",
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                        }
+                                        innerTextField()
+                                    }
+                                }
+                            )
+                        }
+
+                        // Checkbox and Copy IconButton Row centered
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+                        ) {
+                            Text(
+                                "Show Password",
+                                style = MaterialTheme.typography.labelMedium
+                            )
                             Checkbox(
                                 checked = showPassword,
                                 onCheckedChange = { showPassword = it }
                             )
-
-
-                        IconButton(
-                            onClick = {
-                                clipboardManager.setText(AnnotatedString(data.password))
-                                Toast.makeText(context, "Password copied to clipboard!", Toast.LENGTH_SHORT).show()
-
+                            IconButton(
+                                onClick = {
+                                    clipboardManager.setText(AnnotatedString(data.password))
+                                    Toast.makeText(context, "Password copied to clipboard!", Toast.LENGTH_SHORT).show()
+                                }
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.baseline_content_copy_24),
+                                    contentDescription = "Copy Password",
+                                    modifier = Modifier.size(24.dp)
+                                )
                             }
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.baseline_content_copy_24),
-                                contentDescription = "Copy Password",
-                                modifier = Modifier.size(24.dp)
-                            )
                         }
                     }
                 }
