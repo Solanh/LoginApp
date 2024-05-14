@@ -207,13 +207,13 @@ data class DecryptedData(
 fun fetchEncryptedData(): Flow<List<DecryptedData>> = flow {
     val db = FirebaseFirestore.getInstance()
     val secretKey = KeystoreHelper.getSecretKey()
-    val email = UserData.userEmail?.let { sanitizeEmail(it) }
+    val sanEmail = UserData.userEmail?.let { sanitizeEmail(it) }
     val userId = FirebaseAuth.getInstance().currentUser?.uid
 
 
 
     try {
-        val documents = db.collection("$email").get().await()
+        val documents = db.collection("$sanEmail").get().await()
         val dataList = mutableListOf<DecryptedData>()
 
         for (document in documents) {
